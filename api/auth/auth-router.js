@@ -1,7 +1,17 @@
-const router = require('express').Router();
+const express = require('express');
+const { checkCredentials, checkUsernameTaken, verifyUserCredentials, hashPassword, generateToken } = require('./auth-middleware');
+const Users = require('../users/users-model');
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
+const router = express.Router();
+
+router.post('/register', checkCredentials, checkUsernameTaken, hashPassword, async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    const newUser = await Users.add({ username, password });
+    res.status(201).json(newUser);
+  } catch (err) {
+    next(err);
+  }
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -29,8 +39,18 @@ router.post('/register', (req, res) => {
   */
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+router.post('/login', checkCredentials, verifyUserCredentials, (req, res, next) => {
+  try {
+    const { username } = req.user;
+    const token = generateToken(req.user);
+
+    res.status(200).json({
+      message: `welcome, ${username}`,
+      token,
+    });
+  } catch (err) {
+    next(err);
+  }
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
